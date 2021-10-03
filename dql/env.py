@@ -20,7 +20,6 @@ class Transmitting_Radar:
         self.bandwidth = beta
         self.a = a
 
-
 class Receiving_Radar:
     def __init__(self, position, b):
         """
@@ -32,6 +31,60 @@ class Receiving_Radar:
 
         self.position = position
         self.b = b
+
+class Position:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def get(self):
+        return self
+
+class Target:
+    def __init__(self, position, v_x, v_y):
+        self.position = position
+        self.v_x = v_x
+        self.v_y = v_y
+        self.position_start = position
+        self.v_x_start = v_x
+        self.v_y_start = v_y
+
+    def transit(self):
+        """
+        Move to a Next State
+        """
+        # s(t) = F(t, s)*s(t−1) + v(s)
+
+        denta_t = 0.1
+        F_ts = np.array([1, 0, denta_t, 0, 0, 1, 0, denta_t, 0, 0, 1, 0, 0, 0, 0, 1]).reshape(4, 4)
+        s_pre = np.array([self.position.x, self.position.y, self.v_x, self.v_y]).reshape(4, 1)
+        E_v = np.array([denta_t**3/3, 0, denta_t**2/2, 0, 0, denta_t**3/3, 0, denta_t**2/2, denta_t/2,
+                        0, denta_t, 0, 0, denta_t/2, 0, denta_t]).reshape(4, 4)
+        v_s = np.random.normal(0, np.std(E_v, axis=1)).reshape(4, 1)
+
+        state_next = (np.dot(F_ts, s_pre) + v_s).reshape(1, 4)
+
+        self.position = Position(state_next[0], state_next[1])
+        self.v_x, self.v_y = state_next[2], state_next[3]
+
+    def show_cur_state(self):
+        print("x: {:.3f}, y: {:.3f}, v_x: {:.10f}, v_y: {:.10f}".format(self.position.x, self.position.y, self.v_x, self.v_y))
+
+    def get_state(self):
+        """
+        Get the Current State of This Target
+        """
+        state = [self.position, self.v_x, self.v_y]
+        return state
+
+    def reset(self):
+        """
+        Create a New Instance
+        """
+        self.position = self.position_start
+        self.v_x = self.v_x_start
+        self.v_y = self.v_y_start
+
 
 
 class SubCaculator:
@@ -89,10 +142,15 @@ class SubCaculator:
         return matrix_J
 
 class C_ab:
-    def __init__(self, list_radar_TR, list_radar_RR, position_target, action_a, action_b):
+    def __init__(self, list_radar_TR, list_radar_RR, target, action_a, action_b):
         self.radar_TRs = list_radar_TR
         self.radar_RRs = list_radar_RR
-        self.position_target = position_target
+        self.position_target = target.position
+        self.action_a = action_a
+        self.action_b = action_b
+
+    def update_state(self, target, action_a, action_b):
+        self.position_target = target.position
         self.action_a = action_a
         self.action_b = action_b
 
@@ -104,5 +162,41 @@ class C_ab:
                                    bandwidth=i.bandwidth, power=i.p_m, h=1)
                 J_mn = tmp.J_mn()
                 Tr_C_ab += i.a*j.a*J_mn
-
         return Tr_C_ab
+
+
+class RadarSelectionEnv:
+    def __init__(self, RRs, TRs, target, alpha1, alpha2, seed=1):
+        self.RRs = RRs
+        self.TRs = TRs
+        self.target = target
+        self.alpha1 = alpha1
+        self.alpha2 = alpha2
+        self.step_counter = 0
+
+        np.random.seed(seed)
+
+    def get_state(self):
+        """
+        Get Environment State
+        """
+        action_a = []
+        for i in self.TRs:
+            action_a.append(i.a)
+
+        action_b = []
+        for i in self.RRs:
+            action_b.append(i.b)
+
+        action = action_a + action_b
+
+        state_target = self.target
+
+        return state_target + action
+
+    def reset(self):
+        """
+        Create a New Instance
+        """
+        # x_ = x + v_x*denta_t + v_s[1]
+        # y_ = y + v_y*denta_t + v_s[2]
