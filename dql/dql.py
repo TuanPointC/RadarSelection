@@ -37,16 +37,20 @@ class DQL:
         params: num_actions: Integer
         returns: None
         """
-        self.input_dims = input_dims
-        self.num_actions = num_actions
+        self.input_dims = input_dims  # so chieu state: 4
+        self.num_actions = num_actions  # 2^(m+n)
         self.backbone = backbone
+        # tao layer
         self.states = tf.compat.v1.placeholder(dtype=tf.float32,
                                                shape=(None, self.input_dims))
+
         self.next_states = tf.compat.v1.placeholder(dtype=tf.float32,
                                                     shape=(None, self.input_dims))
+
         self.actions = tf.compat.v1.placeholder(dtype=tf.int32, shape=(None,))
         self.rewards = tf.compat.v1.placeholder(
             dtype=tf.float32, shape=(None,))
+
         self.dones = tf.compat.v1.placeholder(dtype=tf.float32, shape=(None, ))
         self.gamma = tf.compat.v1.placeholder(dtype=tf.float32, shape=None)
         self.lr = tf.compat.v1.placeholder(dtype=tf.float32, shape=None)
@@ -56,17 +60,24 @@ class DQL:
     def _define_model(self):
         # Create the Deep Q Learning agent
         self.agent = self.backbone(out_dims=self.num_actions)
+
         # convert action to one-hot format
         one_hot_actions = tf.one_hot(self.actions, self.num_actions)
+        # [1, 0,0, 0 ...]
+        # []
 
         self.q_values = self.agent(self.states)
+
         q_action_values = tf.reduce_sum(
             one_hot_actions * self.q_values, axis=-1)
+
         # Using Bellman Equation to Caculate Ground-Truth
         q_next_values = self.agent(self.next_states)
         q_next_values = tf.reduce_max(q_next_values, axis=-1)
+
         label = (q_next_values * (1.0 - self.dones)) * \
             self.gamma + self.rewards
+
         # define Objective Function
         self.loss = tf.losses.mean_squared_error(label, q_action_values)
         self.opt = tf.compat.v1.train.AdamOptimizer(
