@@ -1,9 +1,16 @@
 import math
 import numpy as np
 
+class Position:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def get(self):
+        return self
 
 class Transmitting_Radar:
-    def __init__(self, position, p_m, beta, a):
+    def __init__(self, position, p_m, beta):
         """
         params - x_m: float - X coordinate
         params - y_m: float - Y coordinate
@@ -18,27 +25,15 @@ class Transmitting_Radar:
         self.position = position
         self.p_m = p_m
         self.bandwidth = beta
-        self.a = a
 
 class Receiving_Radar:
-    def __init__(self, position, b):
+    def __init__(self, position):
         """
         params - x_n: float - X coordinate
         params - y_n: float - Y coordinate
         params - p_n: float - transmit power
-        params - a  : int - Is chosen radar
         """
-
         self.position = position
-        self.b = b
-
-class Position:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def get(self):
-        return self
 
 class Target:
     def __init__(self, position, v_x, v_y):
@@ -81,11 +76,13 @@ class Target:
         """
         Create a New Instance
         """
-        self.position = self.position_start
-        self.v_x = self.v_x_start
-        self.v_y = self.v_y_start
-
-
+        low = 0
+        high = 1000
+        self.position.x = np.random.uniform(low=low, high=high)
+        self.position.y = np.random.uniform(low=low, high=high)
+        v_min, v_max = 10, 12
+        self.v_x = np.random.uniform(low=v_min, high=v_max)
+        self.v_y = np.random.uniform(low=v_min, high=v_max)
 
 class SubCaculator:
     def __init__(self, position_target, position_tr, position_rr, bandwidth, power, h):
@@ -156,12 +153,18 @@ class C_ab:
 
     def result(self):
         Tr_C_ab = np.array([0, 0, 0, 0]).reshape(2, 2)
+        index_i = 0
         for i in self.radar_TRs:
+            index_j = 0
             for j in self.radar_RRs:
                 tmp = SubCaculator(position_target=self.position_target, position_tr=i.position, position_rr=j.position,
                                    bandwidth=i.bandwidth, power=i.p_m, h=1)
                 J_mn = tmp.J_mn()
-                Tr_C_ab += i.a*j.a*J_mn
+                Tr_C_ab += self.action_a[index_i]*self.action_b[index_j]*J_mn
+                index_j += 1
+
+            index_i += 1
+
         return Tr_C_ab
 
 
@@ -180,23 +183,12 @@ class RadarSelectionEnv:
         """
         Get Environment State
         """
-        action_a = []
-        for i in self.TRs:
-            action_a.append(i.a)
-
-        action_b = []
-        for i in self.RRs:
-            action_b.append(i.b)
-
-        action = action_a + action_b
-
         state_target = self.target
 
-        return state_target + action
+        return state_target
 
     def reset(self):
         """
         Create a New Instance
         """
-        # x_ = x + v_x*denta_t + v_s[1]
-        # y_ = y + v_y*denta_t + v_s[2]
+        self.target.reset()
