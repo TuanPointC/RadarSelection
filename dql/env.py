@@ -7,7 +7,7 @@ class Env:
         self.target=target
         self.delta=delta_t
 
-        self.state= np.array([target.position.x,target.position.y,target.vel.x,target.vel.y]).reshape(-1,1)
+        self.state= np.array([target.position["x"],target.position["y"],target.vel["x"],target.vel["y"]]).reshape(-1,1)
 
     # state methods
     def getState(self):
@@ -59,3 +59,25 @@ class Env:
 
         action = np.array([a_vec,b_vec]).reshape(1,-1)
         return action
+
+    # reward
+    def reward(self,q_performance,k):
+        A= k*(len(self.list_radar_RRs)+len(self.list_radar_TRs))
+        B=1
+        sigma= 10
+        countOfTR=0
+        countOfRR=0
+        for i in self.list_radar_TRs:
+            if(i.a>0):
+                countOfTR+=1
+
+        for i in self.list_radar_RRs:
+            if(i.b>0):
+                countOfRR+=1
+        if(countOfTR ==0 or countOfRR==0):
+            return B*-2
+        if(q_performance<= sigma and countOfRR>0 and countOfTR>0):
+            return A/(countOfTR+countOfRR)
+        if (q_performance>sigma and countOfRR>0 and countOfTR>0):
+            return -B
+        

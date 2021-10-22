@@ -2,8 +2,6 @@ import numpy as np
 import tensorflow as tf
 
 # Backbone Architecture
-
-
 class Backbone:
 
     def __init__(self, out_dims):
@@ -65,8 +63,7 @@ class DQL:
         # Using Bellman Equation to Caculate Ground-Truth
         q_next_values = self.agent(self.next_states)
         q_next_values = tf.reduce_max(q_next_values, axis=-1)
-        label = (q_next_values * (1.0 - self.dones)) * \
-            self.gamma + self.rewards
+        label = q_next_values * self.gamma + self.rewards
         # define Objective Function
         self.loss = tf.losses.mean_squared_error(label, q_action_values)
         self.opt = tf.compat.v1.train.AdamOptimizer(

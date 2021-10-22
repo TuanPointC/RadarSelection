@@ -55,12 +55,12 @@ class Caculator:
         return matrix_J
 
     #Q performance =trace C(a,b)
-    def Q_performance(self,list_radar_TRs, list_radar_RRs, position_target, power, bandwidth, h):
+    def Q_performance(self,list_radar_TRs, list_radar_RRs, position_target, bandwidth, h):
         Tr_C_ab = np.array([0, 0, 0, 0]).reshape(2, 2)
         for i in list_radar_TRs:
             for j in list_radar_RRs:
                 J_mn = J_mn(i.position, j.position,
-                            position_target, power, bandwidth, h)
+                            position_target, i.p_m, bandwidth, h)
                 Tr_C_ab += i.a*j.a*J_mn
 
         return Tr_C_ab.trace()

@@ -9,7 +9,7 @@ class Transmitting_Radar:
 
         self.position = position
         self.p_m = p_m
-        self.bandwidth = beta
+        self.beta = beta
         self.a = a
 
 
