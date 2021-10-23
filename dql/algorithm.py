@@ -1,16 +1,20 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.layers import Dense
+tf.compat.v1.disable_eager_execution()
 
 # Backbone Architecture
+
+
 class Backbone:
 
     def __init__(self, out_dims):
 
         self.layers = [
-            tf.keras.layers.Dense(units=64, activation=tf.nn.relu),
-            tf.keras.layers.Dense(units=64, activation=tf.nn.relu),
-            tf.keras.layers.Dense(units=64, activation=tf.nn.relu),
-            tf.keras.layers.Dense(units=out_dims)
+            Dense(units=64, activation='relu'),
+            Dense(units=64, activation='relu'),
+            Dense(units=64, activation='relu'),
+            Dense(units=out_dims)
         ]
 
     def __call__(self, inputs):
@@ -53,10 +57,9 @@ class DQL:
 
     def _define_model(self):
         # Create the Deep Q Learning agent
-        self.agent = self.backbone(out_dims=self.num_actions)
+        self.agent = self.backbone
         # convert action to one-hot format
         one_hot_actions = tf.one_hot(self.actions, self.num_actions)
-
         self.q_values = self.agent(self.states)
         q_action_values = tf.reduce_sum(
             one_hot_actions * self.q_values, axis=-1)
@@ -69,7 +72,7 @@ class DQL:
         self.opt = tf.compat.v1.train.AdamOptimizer(
             self.lr).minimize(loss=self.loss)
 
-    def sel_action(env, model, sess, state, epsilon):
+    def sel_action(self,env, model, sess, state, epsilon):
         """
         perform selecting action for Deep Q Learning Method
 
@@ -78,8 +81,10 @@ class DQL:
             action = env.sam_action()
             return action
         else:
-            state = np.expand_dims(state, axis=0)
+            state = state.reshape(-1,4)
             # Run Inference
+            aa = sess.run([model.q_values],
+                                  feed_dict={model.states: state})
             [q_values] = sess.run([model.q_values],
                                   feed_dict={model.states: state})
             q_values = q_values[0]

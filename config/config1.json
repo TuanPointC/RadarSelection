@@ -22,5 +22,12 @@
 	"lanbda": 10,
 	"B": 1,
 	"c": 300000000,
-	"learning_rate": 0.001
+	"learning_rate": 0.001,
+	"gpu_idx":-1,
+	"buffer_size":10000,
+	"batch_size":512,
+	"max_eps": 1.0,
+	"min_eps": 0.1,
+	"num_episodes": 2000,
+	"gamma": 0.99
 }

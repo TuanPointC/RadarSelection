@@ -4,7 +4,7 @@ import numpy as np
 class Caculator:
 
     def distance(self,position_radar, position_target):
-        return math.sqrt((position_target.x-position_radar.x)**2+(position_target.y-position_radar.y)**2)
+        return math.sqrt((position_target["x"]-position_radar["x"])**2+(position_target["y"]-position_radar["y"])**2)
 
     # alpha m, n
     def loss_efficients(self,position_tr, position_rr, position_target):
@@ -25,11 +25,11 @@ class Caculator:
 
     # phân số cho biến x có công thức : (x_radar - x_target)/d_Tm
     def fractions_x(self,position_radar, position_target):
-        return (position_radar.x - position_target.x)/self.distance(position_radar, position_target)
+        return (position_radar["x"] - position_target["x"])/self.distance(position_radar, position_target)
 
     # phân số cho biến y có công thức : (x_radar - x_target)/d_Tm
     def fractions_y(self,position_target, position_radar):
-        return (position_radar.y - position_target.y)/self.distance(position_radar, position_target)
+        return (position_radar["x"] - position_target["y"])/self.distance(position_radar, position_target)
 
     # Công thức (4)
     def o_mn(self,position_tr, position_rr, position_target, power, bandwidth, h):
@@ -55,15 +55,19 @@ class Caculator:
         return matrix_J
 
     #Q performance =trace C(a,b)
-    def Q_performance(self,list_radar_TRs, list_radar_RRs, position_target, bandwidth, h):
-        Tr_C_ab = np.array([0, 0, 0, 0]).reshape(2, 2)
+
+    def Q_performance(self,list_radar_TRs, list_radar_RRs, position_target, a_action, b_action, h):
+        Tr_C_ab = np.array([0.0, 0.0, 0.0, 0.0]).reshape(2, 2)
+        ind_i = 0
         for i in list_radar_TRs:
+            ind_j = 0
             for j in list_radar_RRs:
-                J_mn = J_mn(i.position, j.position,
-                            position_target, i.p_m, bandwidth, h)
-                Tr_C_ab += i.a*j.a*J_mn
+                Jmn = self.J_mn(i.position, j.position,
+                            position_target, i.p_m, i.beta, h)
+                
+                Tr_C_ab += (1.0 * a_action[ind_i]*b_action[ind_j])*Jmn
+                
+                ind_j += 1
+            ind_i += 1
 
         return Tr_C_ab.trace()
-
-
-
